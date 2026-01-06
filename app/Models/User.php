@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Mail\PasswordResetLink;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +24,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar_url',
+        'last_login_at',
+        'is_active',
     ];
 
     /**
@@ -43,6 +49,28 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_login_at' => 'datetime',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the social accounts for the user.
+     */
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
+    /**
+     * Send the password reset notification with a custom mail.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $frontendUrl = config('boilerplate.auth.frontend_url');
+        $resetPath = config('boilerplate.auth.password_reset_url');
+        $url = "{$frontendUrl}{$resetPath}?token={$token}&email=".urlencode($this->email);
+
+        Mail::to($this->email)->send(new PasswordResetLink($url, $this->name));
     }
 }

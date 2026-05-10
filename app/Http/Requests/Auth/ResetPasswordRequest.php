@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class ResetPasswordRequest extends FormRequest
 {
@@ -16,12 +17,10 @@ class ResetPasswordRequest extends FormRequest
      */
     public function rules(): array
     {
-        $minLength = config('boilerplate.auth.password_min_length', 8);
-
         return [
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'string', "min:{$minLength}", 'confirmed'],
+            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
         ];
     }
 
@@ -31,7 +30,6 @@ class ResetPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'password.min' => 'Password must be at least :min characters.',
             'password.confirmed' => 'Password confirmation does not match.',
         ];
     }

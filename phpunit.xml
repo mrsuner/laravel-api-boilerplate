@@ -31,5 +31,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="AUTH_RATE_LIMIT_ENABLED" value="false"/>
+        <env name="AUTH_PASSWORD_REQUIRE_MIXED_CASE" value="false"/>
     </php>
 </phpunit>

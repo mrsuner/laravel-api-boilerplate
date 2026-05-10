@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class ChangePasswordRequest extends FormRequest
 {
@@ -16,11 +17,9 @@ class ChangePasswordRequest extends FormRequest
      */
     public function rules(): array
     {
-        $minLength = config('boilerplate.auth.password_min_length', 8);
-
         return [
             'current_password' => ['required', 'string', 'current_password'],
-            'password' => ['required', 'string', "min:{$minLength}", 'confirmed'],
+            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
         ];
     }
 
@@ -31,7 +30,6 @@ class ChangePasswordRequest extends FormRequest
     {
         return [
             'current_password.current_password' => 'The current password is incorrect.',
-            'password.min' => 'Password must be at least :min characters.',
             'password.confirmed' => 'Password confirmation does not match.',
         ];
     }

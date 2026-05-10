@@ -37,6 +37,61 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | API Response Helpers
+    |--------------------------------------------------------------------------
+    |
+    | Defaults consumed by App\Http\Controllers\Controller response helpers
+    | (respondOk, respondNotFound, respondForbidden, ...). Messages are run
+    | through Laravel's translator, so adding lang/<locale>/boilerplate.php
+    | with matching keys will localize them transparently.
+    |
+    */
+
+    'responses' => [
+        // When true and a helper is called with a null message, the matching
+        // default below is used. Set false to omit the message key entirely.
+        'use_defaults' => true,
+
+        'default_messages' => [
+            'ok' => 'Success.',
+            'created' => 'Resource created.',
+            'accepted' => 'Request accepted.',
+            'bad_request' => 'Bad request.',
+            'unauthorized' => 'Unauthenticated.',
+            'forbidden' => 'This action is unauthorized.',
+            'not_found' => 'Resource not found.',
+            'method_not_allowed' => 'Method not allowed.',
+            'conflict' => 'Resource conflict.',
+            'unprocessable' => 'The given data was invalid.',
+            'too_many_requests' => 'Too many requests.',
+            'server_error' => 'Server error.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Exception Rendering
+    |--------------------------------------------------------------------------
+    |
+    | Controls how framework exceptions are rendered for API requests. When
+    | render_for_api is true, common exceptions (Authentication, Authorization,
+    | NotFound, MethodNotAllowed, Validation, Throttle, generic Throwable) are
+    | converted to a standard JSON envelope matching the response helpers.
+    |
+    */
+
+    'exceptions' => [
+        // Render exceptions as standardized JSON for /api/* and JSON requests.
+        'render_for_api' => true,
+
+        // When true, server errors include the exception class, file, line,
+        // and message in the response payload. Useful for staging; never
+        // enable in production.
+        'expose_debug_in_response' => env('API_EXPOSE_DEBUG', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Configuration
     |--------------------------------------------------------------------------
     |
@@ -58,8 +113,18 @@ return [
         // Password reset settings
         'password_reset_expiry_minutes' => 60,
 
-        // Password requirements
-        'password_min_length' => 8,
+        // Password policy applied via Illuminate\Validation\Rules\Password.
+        // Adjust per project; defaults aim at modern best-practice and can
+        // be loosened for testing or legacy migrations.
+        'password' => [
+            'min_length' => (int) env('AUTH_PASSWORD_MIN_LENGTH', 8),
+            'require_mixed_case' => (bool) env('AUTH_PASSWORD_REQUIRE_MIXED_CASE', true),
+            'require_numbers' => (bool) env('AUTH_PASSWORD_REQUIRE_NUMBERS', true),
+            'require_symbols' => (bool) env('AUTH_PASSWORD_REQUIRE_SYMBOLS', false),
+            // Checks the password against haveibeenpwned.com — requires HTTP
+            // egress, so leave disabled in tests/dev unless validating.
+            'uncompromised' => (bool) env('AUTH_PASSWORD_UNCOMPROMISED', false),
+        ],
 
         // Frontend URLs for password reset emails
         'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
@@ -81,6 +146,37 @@ return [
             'login_notification_enabled' => env('AUTH_LOGIN_NOTIFICATION_ENABLED', true),
             'logout_notification_enabled' => env('AUTH_LOGOUT_NOTIFICATION_ENABLED', false),
             'password_reset_confirmation_enabled' => env('AUTH_PASSWORD_RESET_CONFIRMATION_ENABLED', true),
+        ],
+
+        // Email verification — when enabled, registration triggers a signed
+        // verification email and protected flows can require verification.
+        // The verify endpoint is mounted at /api/v1/auth/email/verify/{id}/{hash}.
+        'email_verification' => [
+            'enabled' => (bool) env('AUTH_EMAIL_VERIFICATION_ENABLED', true),
+            // When true, login refuses unverified accounts with 403.
+            'required_for_login' => (bool) env('AUTH_EMAIL_VERIFICATION_REQUIRED_FOR_LOGIN', false),
+            'expire_minutes' => (int) env('AUTH_EMAIL_VERIFICATION_EXPIRE_MINUTES', 60),
+            // Optional frontend URL the user is redirected to after a click.
+            // ?status=success|failure&reason=... is appended. When null/empty,
+            // the controller returns JSON instead.
+            'redirect_url' => env('AUTH_EMAIL_VERIFICATION_REDIRECT_URL'),
+        ],
+
+        // Per-endpoint rate limits applied via throttle:auth-<name>.
+        // Each entry is { max: int, per_minutes: int }. Setting 'enabled' to
+        // false bypasses every limiter (useful in tests). Limiters are keyed
+        // by the authenticated user id when present, otherwise by client IP.
+        'rate_limit' => [
+            'enabled' => env('AUTH_RATE_LIMIT_ENABLED', true),
+            'limits' => [
+                'login' => ['max' => 10, 'per_minutes' => 1],
+                'register' => ['max' => 5, 'per_minutes' => 1],
+                'otp_issue' => ['max' => 5, 'per_minutes' => 1],
+                'otp_verify' => ['max' => 10, 'per_minutes' => 1],
+                'password_forgot' => ['max' => 3, 'per_minutes' => 1],
+                'social' => ['max' => 10, 'per_minutes' => 1],
+                'email_verify_resend' => ['max' => 6, 'per_minutes' => 1],
+            ],
         ],
     ],
 

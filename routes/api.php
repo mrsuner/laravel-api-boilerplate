@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AppAuthController;
 use App\Http\Controllers\Api\Auth\AppSocialAuthController;
+use App\Http\Controllers\Api\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\Auth\SharedAuthController;
 use App\Http\Controllers\Api\Auth\WebAuthController;
 use App\Http\Controllers\Api\Auth\WebSocialAuthController;
@@ -19,15 +20,15 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth/app')->group(function () {
     // Public routes
-    Route::post('/register', [AppAuthController::class, 'register']);
-    Route::post('/login', [AppAuthController::class, 'login']);
-    Route::post('/otp', [AppAuthController::class, 'requestOtp']);
-    Route::post('/otp/verify', [AppAuthController::class, 'verifyOtp']);
-    Route::post('/forgot-password', [AppAuthController::class, 'forgotPassword']);
+    Route::post('/register', [AppAuthController::class, 'register'])->middleware('throttle:auth-register');
+    Route::post('/login', [AppAuthController::class, 'login'])->middleware('throttle:auth-login');
+    Route::post('/otp', [AppAuthController::class, 'requestOtp'])->middleware('throttle:auth-otp_issue');
+    Route::post('/otp/verify', [AppAuthController::class, 'verifyOtp'])->middleware('throttle:auth-otp_verify');
+    Route::post('/forgot-password', [AppAuthController::class, 'forgotPassword'])->middleware('throttle:auth-password_forgot');
     Route::post('/reset-password', [AppAuthController::class, 'resetPassword']);
 
     // Social authentication routes
-    Route::prefix('social')->group(function () {
+    Route::prefix('social')->middleware('throttle:auth-social')->group(function () {
         Route::post('/{provider}/redirect', [AppSocialAuthController::class, 'redirect']);
         Route::post('/{provider}/callback', [AppSocialAuthController::class, 'callback']);
     });
@@ -57,15 +58,15 @@ Route::prefix('auth/app')->group(function () {
 
 Route::prefix('auth/web')->group(function () {
     // Public routes
-    Route::post('/register', [WebAuthController::class, 'register']);
-    Route::post('/login', [WebAuthController::class, 'login']);
-    Route::post('/otp', [WebAuthController::class, 'requestOtp']);
-    Route::post('/otp/verify', [WebAuthController::class, 'verifyOtp']);
-    Route::post('/forgot-password', [WebAuthController::class, 'forgotPassword']);
+    Route::post('/register', [WebAuthController::class, 'register'])->middleware('throttle:auth-register');
+    Route::post('/login', [WebAuthController::class, 'login'])->middleware('throttle:auth-login');
+    Route::post('/otp', [WebAuthController::class, 'requestOtp'])->middleware('throttle:auth-otp_issue');
+    Route::post('/otp/verify', [WebAuthController::class, 'verifyOtp'])->middleware('throttle:auth-otp_verify');
+    Route::post('/forgot-password', [WebAuthController::class, 'forgotPassword'])->middleware('throttle:auth-password_forgot');
     Route::post('/reset-password', [WebAuthController::class, 'resetPassword']);
 
     // Social authentication routes
-    Route::prefix('social')->group(function () {
+    Route::prefix('social')->middleware('throttle:auth-social')->group(function () {
         Route::post('/{provider}/redirect', [WebSocialAuthController::class, 'redirect']);
         Route::post('/{provider}/callback', [WebSocialAuthController::class, 'callback']);
     });
@@ -81,6 +82,26 @@ Route::prefix('auth/web')->group(function () {
         Route::post('/social/{provider}/link/callback', [WebSocialAuthController::class, 'linkCallback']);
         Route::delete('/social/{provider}/unlink', [WebSocialAuthController::class, 'unlink']);
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Email Verification (Shared)
+|--------------------------------------------------------------------------
+|
+| The verify endpoint is signed-URL protected and does NOT require auth so
+| users can click the link from a browser without an active session. Resend
+| is auth-protected and rate-limited.
+|
+*/
+
+Route::prefix('auth/email')->group(function () {
+    Route::get('/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware('signed')
+        ->name('verification.verify');
+
+    Route::post('/verification-notification', [EmailVerificationController::class, 'resend'])
+        ->middleware(['auth:sanctum', 'throttle:auth-email_verify_resend']);
 });
 
 /*

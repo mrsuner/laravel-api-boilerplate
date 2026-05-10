@@ -17,6 +17,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset as PasswordResetEvent;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -114,6 +115,10 @@ class AppAuthController extends Controller
             return response()->json(['message' => 'Account is inactive.'], 403);
         }
 
+        if (config('boilerplate.auth.email_verification.required_for_login') && ! $user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email address has not been verified.'], 403);
+        }
+
         $user->update(['last_login_at' => now()]);
 
         event(new Login('sanctum', $user, false));
@@ -208,6 +213,13 @@ class AppAuthController extends Controller
 
         if (! $user->is_active) {
             return response()->json(['message' => 'Account is inactive.'], 403);
+        }
+
+        // Successful OTP delivery proves ownership of the email; mark the
+        // account as verified so subsequent password logins aren't blocked.
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new Verified($user));
         }
 
         $user->update(['last_login_at' => now()]);

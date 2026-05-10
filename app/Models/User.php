@@ -3,14 +3,18 @@
 namespace App\Models;
 
 use App\Mail\PasswordResetLink;
+use App\Mail\VerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -72,5 +76,31 @@ class User extends Authenticatable
         $url = "{$frontendUrl}{$resetPath}?token={$token}&email=".urlencode($this->email);
 
         Mail::to($this->email)->send(new PasswordResetLink($url, $this->name));
+    }
+
+    /**
+     * Override Laravel's default verification notification with our Mailable
+     * and gate it on boilerplate.auth.email_verification.enabled. The
+     * Registered event listener calls this after registration, so toggling
+     * the config flag is enough to opt in or out of verification emails.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        if (! config('boilerplate.auth.email_verification.enabled', true)) {
+            return;
+        }
+
+        $expiry = (int) config('boilerplate.auth.email_verification.expire_minutes', 60);
+
+        $url = URL::temporarySignedRoute(
+            'verification.verify',
+            Carbon::now()->addMinutes($expiry),
+            [
+                'id' => $this->getKey(),
+                'hash' => sha1($this->getEmailForVerification()),
+            ],
+        );
+
+        Mail::to($this->email)->send(new VerifyEmail($url, $this->name));
     }
 }

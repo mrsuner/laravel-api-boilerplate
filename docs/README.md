@@ -18,6 +18,7 @@ Per-feature docs for the Laravel API Boilerplate. Start with the area you're tou
 |---|---|
 | [api-responses.md](api-responses.md) | Base controller helpers (`respondOk`, `respondNotFound`, …) and the global exception → JSON envelope renderer |
 | [rate-limiting.md](rate-limiting.md) | Per-endpoint named throttles for the auth surface |
+| [rbac.md](rbac.md) | Roles and permissions via Laratrust — middleware, default-role assignment, seeder |
 
 ## Cross-Cutting
 

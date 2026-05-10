@@ -11,6 +11,7 @@ This is the high-level map of the authentication module. Each sub-feature has it
 | Email verification | [email-verification.md](email-verification.md) |
 | Password policy | [password-policy.md](password-policy.md) |
 | Rate limiting | [rate-limiting.md](rate-limiting.md) |
+| RBAC (roles & permissions) | [rbac.md](rbac.md) |
 | Auth event emails | [notifications.md](notifications.md) |
 | Response envelope & errors | [api-responses.md](api-responses.md) |
 
@@ -209,6 +210,7 @@ See [otp.md](otp.md).
 | Brute-force protection | Per-endpoint throttles — see [rate-limiting.md](rate-limiting.md) |
 | Weak passwords | `Password::defaults()` chain — see [password-policy.md](password-policy.md) |
 | Email ownership | [email-verification.md](email-verification.md) — required-for-login is a config flag |
+| Authorization | RBAC roles + permissions — see [rbac.md](rbac.md) |
 
 ## Key Files
 

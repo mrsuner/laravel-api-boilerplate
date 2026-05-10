@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Auth\Concerns;
 
 use App\Models\SocialAccount;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
@@ -69,6 +70,8 @@ trait HandlesSocialiteAuth
                 'avatar_url' => $socialUser->getAvatar(),
                 'is_active' => true,
             ]);
+
+            event(new Registered($user));
         }
 
         // Create the social account link

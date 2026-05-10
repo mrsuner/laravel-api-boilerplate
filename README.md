@@ -36,6 +36,7 @@ Per-feature docs live in [`docs/`](docs/README.md). The index links every module
 | Password policy | [docs/password-policy.md](docs/password-policy.md) |
 | Rate limiting | [docs/rate-limiting.md](docs/rate-limiting.md) |
 | API responses & exception envelope | [docs/api-responses.md](docs/api-responses.md) |
+| RBAC (roles & permissions) | [docs/rbac.md](docs/rbac.md) |
 | Auth event email notifications | [docs/notifications.md](docs/notifications.md) |
 | Roadmap memo | [docs/devlog/2026-05-10-boilerplate-roadmap.md](docs/devlog/2026-05-10-boilerplate-roadmap.md) |
 

@@ -180,4 +180,51 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | RBAC (Roles & Permissions)
+    |--------------------------------------------------------------------------
+    |
+    | Defaults consumed by Database\Seeders\RolesAndPermissionsSeeder. Edit
+    | the lists for your project's domain — the seeder upserts by name, so
+    | running it repeatedly is safe and additive. The default role is auto-
+    | assigned to new users by the registration controllers when set.
+    |
+    | Permission naming follows action.resource (e.g. users.read). Each role
+    | lists the permission names it should have; '*' grants every permission.
+    |
+    */
+
+    'rbac' => [
+        // Master switch. When false the seeder is a no-op and registration
+        // does not auto-assign a role.
+        'enabled' => (bool) env('RBAC_ENABLED', true),
+
+        // Role assigned to newly registered users. Set to null to skip
+        // auto-assignment.
+        'default_role' => env('RBAC_DEFAULT_ROLE', 'user'),
+
+        'permissions' => [
+            ['name' => 'users.read', 'display_name' => 'View Users', 'description' => 'List and view users.'],
+            ['name' => 'users.write', 'display_name' => 'Manage Users', 'description' => 'Create, update, and delete users.'],
+            ['name' => 'roles.read', 'display_name' => 'View Roles', 'description' => 'List and view roles.'],
+            ['name' => 'roles.write', 'display_name' => 'Manage Roles', 'description' => 'Create, update, and delete roles.'],
+        ],
+
+        'roles' => [
+            [
+                'name' => 'admin',
+                'display_name' => 'Administrator',
+                'description' => 'Full access.',
+                'permissions' => ['*'],
+            ],
+            [
+                'name' => 'user',
+                'display_name' => 'User',
+                'description' => 'Standard user.',
+                'permissions' => [],
+            ],
+        ],
+    ],
+
 ];

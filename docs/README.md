@@ -37,5 +37,6 @@ Per-feature docs for the Laravel API Boilerplate. Start with the area you're tou
 
 - **Configurability first.** Every feature exposes its knobs through `config/boilerplate.php` with matching env vars in `.env.example`. If you can't toggle it from config, treat that as a bug.
 - **Standard response envelope.** Both intentional responses and thrown exceptions go through the [API responses module](api-responses.md). Don't construct raw `response()->json([...], $code)` for errors — use the helpers or throw, so the shape stays consistent.
+- **Owner-scoped reads live under `/me/*`.** Each owned-resource collection (e.g. `/me/files`) is served by a controller in `App\Http\Controllers\Api\Me\` extending `Me\Controller`. Mutation endpoints stay on the canonical resource controller; `Me\*` is read-only and always scoped to `$request->user()`. This keeps ownership boundaries explicit in the URL and prevents accidental cross-user reads.
 - **Tests live alongside features.** Look for `tests/Feature/<Area>/...` matching each doc above. Tests are the canonical source of truth for behavior.
 - **Boilerplate, not blueprint.** These features are starting points. Edit them — the controllers, mailables, Blade views, and config defaults are all expected to be customized per project.

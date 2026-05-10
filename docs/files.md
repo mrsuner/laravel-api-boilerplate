@@ -82,7 +82,8 @@ flowchart LR
 
 ## Endpoints
 
-All routes live under `/api/v1/files`.
+All routes live under `/api/v1/files` (resource operations) and `/api/v1/me/files`
+(owner-scoped collection).
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -90,11 +91,26 @@ All routes live under `/api/v1/files`.
 | GET | `/files/{file}` | required | Fetch metadata. Uploader-only for private files. |
 | GET | `/files/{file}/download` | required | Stream the file. Uploader-only for private; any authed user for public. |
 | DELETE | `/files/{file}` | required | Soft-delete the record and remove from disk. |
+| GET | `/me/files` | required | List files owned by the caller. Anonymously uploaded files never appear. |
 
 \* Anonymous uploads are accepted only when `allow_anonymous_upload` is true.
 Anonymously uploaded files are write-only over HTTP — the metadata/download/delete
 endpoints all require auth and an uploader match. Use `FileService` server-side
 to operate on them.
+
+### Listing My Files (`GET /me/files`)
+
+| Query param | Default | Notes |
+|---|---|---|
+| `claimed` | `true` | `true` = persistent only; `false` = pending TTL only. Accepts `true`/`false`/`1`/`0`/`on`/`off`/`yes`/`no`. |
+| `visibility` | — | `public` or `private`. |
+| `q` | — | Substring match against `client_name`. |
+| `sort` | `-created_at` | One of `created_at`, `-created_at`, `size`, `-size`. |
+| `per_page` | `15` | Clamped to 1–100. |
+| `page` | `1` | Standard Laravel pagination. |
+
+Returns the standard `{ data, meta, links }` paginated envelope (see
+[api-responses.md](api-responses.md)).
 
 ### Upload (curl)
 
@@ -242,10 +258,13 @@ Indexes follow the project naming convention.
 | File | Purpose |
 |---|---|
 | `config/boilerplate.php → files` | Defaults and toggles. |
-| `app/Models/File.php` | Eloquent model with `claim()` / `release()` helpers. |
+| `app/Models/File.php` | Eloquent model with `claim()` / `release()` helpers and `scopeOwnedBy`. |
 | `app/Services/Files/FileService.php` | Storage, claim, release, delete. |
 | `app/Http/Controllers/Api/FileController.php` | Upload / show / download / destroy. |
-| `app/Http/Requests/Files/UploadFileRequest.php` | Validation. |
+| `app/Http/Controllers/Api/Me/FileController.php` | `GET /me/files` listing for the current user. |
+| `app/Http/Controllers/Api/Me/Controller.php` | Base for `Me\*` controllers (pagination + user resolution). |
+| `app/Http/Requests/Files/UploadFileRequest.php` | Upload validation. |
+| `app/Http/Requests/Me/ListFilesRequest.php` | `/me/files` query validation. |
 | `app/Http/Resources/FileResource.php` | API envelope. |
 | `app/Console/Commands/CleanupExpiredFiles.php` | `files:cleanup` artisan command. |
 | `database/migrations/*_create_files_table.php` | Schema. |

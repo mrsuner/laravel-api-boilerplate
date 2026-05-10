@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -62,6 +64,22 @@ class File extends Model
     public function uploader(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Scope a query to files owned by the given user.
+     *
+     * Anonymous uploads (uploader_id null) never match — callers that need
+     * those should query without this scope.
+     *
+     * @param  Builder<File>  $query
+     * @return Builder<File>
+     */
+    public function scopeOwnedBy(Builder $query, Authenticatable $user): Builder
+    {
+        return $query
+            ->where('uploader_type', $user->getMorphClass())
+            ->where('uploader_id', $user->getKey());
     }
 
     /**

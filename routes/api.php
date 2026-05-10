@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Auth\SharedAuthController;
 use App\Http\Controllers\Api\Auth\WebAuthController;
 use App\Http\Controllers\Api\Auth\WebSocialAuthController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\Me\FileController as MeFileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -107,12 +108,19 @@ Route::prefix('auth/email')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Shared Routes (Works with both token and cookie auth)
+| Me — Current User & Owned Resources
 |--------------------------------------------------------------------------
+|
+| Endpoints scoped to the authenticated user. /me returns the user identity;
+| nested resources (e.g. /me/files) return collections owned by the caller.
+| Add new owned-resource controllers under App\Http\Controllers\Api\Me and
+| register them inside this group so the auth + scoping pattern stays uniform.
+|
 */
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/me', [SharedAuthController::class, 'me']);
+Route::middleware('auth:sanctum')->prefix('me')->name('me.')->group(function (): void {
+    Route::get('/', [SharedAuthController::class, 'me'])->name('show');
+    Route::get('/files', [MeFileController::class, 'index'])->name('files.index');
 });
 
 /*

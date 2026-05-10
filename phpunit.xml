@@ -34,5 +34,6 @@
         <env name="AUTH_RATE_LIMIT_ENABLED" value="false"/>
         <env name="AUTH_PASSWORD_REQUIRE_MIXED_CASE" value="false"/>
         <env name="RBAC_ENABLED" value="false"/>
+        <env name="FILES_RATE_LIMIT_ENABLED" value="false"/>
     </php>
 </phpunit>

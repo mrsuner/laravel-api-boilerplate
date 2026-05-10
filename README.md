@@ -18,6 +18,7 @@ This boilerplate is target to let any developers familiar with Laravel to quickl
 - **Standard API envelope**: base `Controller` response helpers plus a global exception → JSON renderer
 - **API Documentation**: Automated docs via [Scribe](https://scribe.knuckles.wtf/)
 - **Roles & Permissions**: Manage access control with [Laratrust](https://laratrust.santigarcor.me/)
+- **File uploads**: Two-phase upload with TTL + scheduled cleanup; works with `local` or `s3`
 - **Data Transfer Objects**: Type-safe data handling using [Spatie Laravel Data](https://spatie.be/docs/laravel-data)
 - **Code Quality**: Automated code styling with [Laravel Pint](https://laravel.com/docs/pint)
 - **Testing**: Comprehensive testing suite with [PHPUnit](https://phpunit.de/)
@@ -37,6 +38,7 @@ Per-feature docs live in [`docs/`](docs/README.md). The index links every module
 | Rate limiting | [docs/rate-limiting.md](docs/rate-limiting.md) |
 | API responses & exception envelope | [docs/api-responses.md](docs/api-responses.md) |
 | RBAC (roles & permissions) | [docs/rbac.md](docs/rbac.md) |
+| File uploads (TTL + cleanup) | [docs/files.md](docs/files.md) |
 | Auth event email notifications | [docs/notifications.md](docs/notifications.md) |
 | Roadmap memo | [docs/devlog/2026-05-10-boilerplate-roadmap.md](docs/devlog/2026-05-10-boilerplate-roadmap.md) |
 

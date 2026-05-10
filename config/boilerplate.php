@@ -195,6 +195,77 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | File Uploads
+    |--------------------------------------------------------------------------
+    |
+    | Two-phase upload model: clients POST a file to /api/v1/files and receive
+    | a record with `expires_at` set in the future. The file is treated as a
+    | temporary upload until it is "claimed" — typically when the file id is
+    | persisted on a parent record (e.g. user.avatar_file_id). Unclaimed files
+    | past their TTL are removed by `php artisan files:cleanup`, scheduled
+    | hourly in routes/console.php.
+    |
+    | Path template tokens: {Y} year, {m} month, {d} day. Resolved at upload
+    | time and prepended to the generated ULID filename.
+    |
+    */
+
+    'files' => [
+        'enabled' => (bool) env('FILES_ENABLED', true),
+
+        // Filesystem disk to store uploads on (see config/filesystems.php).
+        // Defaults to 'local'; switch to 's3' (or another object store) for
+        // production. Visibility is set per-upload via the `visibility` flag.
+        'disk' => env('FILES_DISK', 'local'),
+
+        // Upload visibility default — 'public' or 'private'. Per-upload can
+        // override via the request body. Private files require auth and only
+        // the uploader can fetch them; public files are readable by any
+        // authenticated client.
+        'visibility' => env('FILES_DEFAULT_VISIBILITY', 'private'),
+
+        // Sub-directory template under the disk root.
+        'path_template' => env('FILES_PATH_TEMPLATE', 'uploads/{Y}/{m}'),
+
+        // Allow uploads without an authenticated user. Anonymous uploads are
+        // recorded with no uploader_id and are inaccessible via the file API
+        // post-upload — server-side processes claim them by file id.
+        'allow_anonymous_upload' => (bool) env('FILES_ALLOW_ANONYMOUS_UPLOAD', false),
+
+        // Initial TTL applied to every fresh upload. Calling File::claim()
+        // clears this; release() re-attaches it.
+        'default_expires_after_minutes' => (int) env('FILES_DEFAULT_EXPIRES_AFTER_MINUTES', 1440),
+
+        // Validation. Set to null to allow any mime/extension.
+        'max_size_kb' => (int) env('FILES_MAX_SIZE_KB', 10240),
+        'allowed_mime_types' => null,
+        'allowed_extensions' => null,
+
+        // Cleanup command settings — invoked by Schedule::command(...) hourly
+        // when enabled. Disable to handle TTL eviction yourself.
+        'cleanup' => [
+            'enabled' => (bool) env('FILES_CLEANUP_ENABLED', true),
+            'chunk_size' => (int) env('FILES_CLEANUP_CHUNK_SIZE', 100),
+        ],
+
+        // Per-mode rate limiting on the upload endpoint. Authenticated and
+        // anonymous limits are tuned independently because anonymous abuse is
+        // cheaper to mount. Both are keyed by user id when present, IP otherwise.
+        'rate_limit' => [
+            'enabled' => (bool) env('FILES_RATE_LIMIT_ENABLED', true),
+            'authenticated' => [
+                'max' => (int) env('FILES_RATE_LIMIT_AUTH_MAX', 60),
+                'per_minutes' => (int) env('FILES_RATE_LIMIT_AUTH_PER_MINUTES', 1),
+            ],
+            'anonymous' => [
+                'max' => (int) env('FILES_RATE_LIMIT_ANON_MAX', 5),
+                'per_minutes' => (int) env('FILES_RATE_LIMIT_ANON_PER_MINUTES', 5),
+            ],
+        ],
+    ],
+
     'rbac' => [
         // Master switch. When false the seeder is a no-op and registration
         // does not auto-assign a role.

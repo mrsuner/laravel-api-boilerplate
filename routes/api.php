@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\Auth\SharedAuthController;
 use App\Http\Controllers\Api\Auth\WebAuthController;
 use App\Http\Controllers\Api\Auth\WebSocialAuthController;
+use App\Http\Controllers\Api\FileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -112,4 +113,31 @@ Route::prefix('auth/email')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [SharedAuthController::class, 'me']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Files
+|--------------------------------------------------------------------------
+|
+| Upload allows anonymous traffic when boilerplate.files.allow_anonymous_upload
+| is enabled — register that route without auth and rely on a stricter throttle.
+| Otherwise upload requires Sanctum auth. show/download/destroy are always
+| auth-protected.
+|
+*/
+
+Route::prefix('files')->name('files.')->group(function (): void {
+    // Auth gate is enforced inside FileController::store so the route can
+    // serve both authenticated and anonymous uploads based on config without
+    // re-registering at request time. Throttle limit branches on user presence.
+    Route::post('/', [FileController::class, 'store'])
+        ->middleware('throttle:files-upload')
+        ->name('store');
+
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::get('/{file}', [FileController::class, 'show'])->name('show');
+        Route::get('/{file}/download', [FileController::class, 'download'])->name('download');
+        Route::delete('/{file}', [FileController::class, 'destroy'])->name('destroy');
+    });
 });

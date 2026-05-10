@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table): void {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('name');
             $table->string('display_name')->nullable();
             $table->string('description')->nullable();
@@ -19,7 +19,7 @@ return new class extends Migration
         });
 
         Schema::create('permissions', function (Blueprint $table): void {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('name');
             $table->string('display_name')->nullable();
             $table->string('description')->nullable();
@@ -29,8 +29,8 @@ return new class extends Migration
         });
 
         Schema::create('role_user', function (Blueprint $table): void {
-            $table->unsignedBigInteger('role_id');
-            $table->unsignedBigInteger('user_id');
+            $table->ulid('role_id');
+            $table->ulid('user_id');
             $table->string('user_type');
 
             $table->primary(['user_id', 'role_id', 'user_type'], 'pk_role_user');
@@ -43,8 +43,8 @@ return new class extends Migration
         });
 
         Schema::create('permission_user', function (Blueprint $table): void {
-            $table->unsignedBigInteger('permission_id');
-            $table->unsignedBigInteger('user_id');
+            $table->ulid('permission_id');
+            $table->ulid('user_id');
             $table->string('user_type');
 
             $table->primary(['user_id', 'permission_id', 'user_type'], 'pk_permission_user');
@@ -57,8 +57,8 @@ return new class extends Migration
         });
 
         Schema::create('permission_role', function (Blueprint $table): void {
-            $table->unsignedBigInteger('permission_id');
-            $table->unsignedBigInteger('role_id');
+            $table->ulid('permission_id');
+            $table->ulid('role_id');
 
             $table->primary(['permission_id', 'role_id'], 'pk_permission_role');
 

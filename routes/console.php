@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('files:cleanup')
     ->hourly()
     ->when(fn (): bool => (bool) config('boilerplate.files.cleanup.enabled', true));
+
+Schedule::command('audit:prune')
+    ->dailyAt('03:00')
+    ->when(fn (): bool => (bool) config('boilerplate.audit.prune.enabled', true));

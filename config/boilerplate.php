@@ -266,6 +266,72 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Audit Trail
+    |--------------------------------------------------------------------------
+    |
+    | Append-only audit log written via App\Services\Audit\AuditLogger and
+    | the audit_log() helper. Optionally driven by the App\Models\Concerns\
+    | Auditable trait on individual models for create/update/delete capture.
+    |
+    | All audit writes are best-effort — failures are logged via Laravel's
+    | default logger but never bubble up to the caller, so business logic is
+    | not affected by audit infrastructure problems.
+    |
+    */
+
+    'audit' => [
+        // Master switch. When false the service is a no-op, the trait does
+        // nothing, and audit_log() returns null. The migration still runs.
+        'enabled' => (bool) env('AUDIT_ENABLED', true),
+
+        // Database connection for the audit_logs table. Null uses the
+        // application's default connection. Point at a dedicated connection
+        // to isolate audit writes from primary application IO.
+        'connection' => env('AUDIT_DB_CONNECTION'),
+
+        'table' => 'audit_logs',
+
+        // When true, audit writes are dispatched via the WriteAuditLog job
+        // instead of writing synchronously. Requires a running queue worker.
+        'queue' => (bool) env('AUDIT_QUEUE', false),
+        'queue_connection' => env('AUDIT_QUEUE_CONNECTION'),
+        'queue_name' => env('AUDIT_QUEUE_NAME', 'default'),
+
+        // When true the service captures request context (ip, user agent,
+        // X-Request-Id header) from the current request and stores it on
+        // each row. Disable to suppress (e.g. for privacy-sensitive flows).
+        'capture_request_context' => (bool) env('AUDIT_CAPTURE_REQUEST_CONTEXT', true),
+
+        // Keys redacted from old_values / new_values / metadata payloads
+        // before persistence. Match is case-insensitive and recursive.
+        'redact_keys' => [
+            'password',
+            'password_confirmation',
+            'current_password',
+            'token',
+            'access_token',
+            'refresh_token',
+            'secret',
+            'authorization',
+            'api_key',
+        ],
+
+        // Event name allow-list. Null = record every event. Provide an
+        // array of exact event names to restrict logging (e.g. only
+        // capture ['auth.login', 'auth.logout', 'users.deleted']).
+        'events_allowlist' => null,
+
+        // Periodic pruning. Rows older than `days` are deleted by the
+        // `audit:prune` artisan command, scheduled daily when enabled.
+        'prune' => [
+            'enabled' => (bool) env('AUDIT_PRUNE_ENABLED', true),
+            'days' => (int) env('AUDIT_PRUNE_DAYS', 180),
+            'chunk_size' => (int) env('AUDIT_PRUNE_CHUNK_SIZE', 1000),
+        ],
+    ],
+
     'rbac' => [
         // Master switch. When false the seeder is a no-op and registration
         // does not auto-assign a role.

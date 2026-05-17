@@ -20,6 +20,7 @@ Per-feature docs for the Laravel API Boilerplate. Start with the area you're tou
 | [rate-limiting.md](rate-limiting.md) | Per-endpoint named throttles for the auth surface |
 | [rbac.md](rbac.md) | Roles and permissions via Laratrust — middleware, default-role assignment, seeder |
 | [files.md](files.md) | File uploads with TTL — two-phase upload, claim/release, hourly cleanup |
+| [push-notifications.md](push-notifications.md) | Device-token registry — idempotent token-keyed registration with ownership transfer, FCM out of the box, Expo opt-in skill |
 
 ## Cross-Cutting
 

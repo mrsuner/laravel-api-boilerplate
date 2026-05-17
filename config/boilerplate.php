@@ -268,6 +268,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Push Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Device token registry + push delivery. The user_devices table and the
+    | /devices + /me/devices API are provider-agnostic. FCM ships wired out
+    | of the box via App\Notifications\PushNotification; Expo/APNs values are
+    | reserved in App\Enums\PushProvider so the schema never changes when you
+    | add them. To wire Expo delivery, run the add-expo-push skill.
+    |
+    | FCM credentials are resolved by kreait/laravel-firebase from the
+    | FIREBASE_CREDENTIALS env var (absolute path to the service-account
+    | JSON). When `enabled` is false the device endpoints 404 and
+    | PushNotification short-circuits, so the boilerplate stays bootable with
+    | no Firebase project configured.
+    |
+    */
+
+    'push' => [
+        'enabled' => (bool) env('PUSH_ENABLED', true),
+
+        // Default transport advertised to clients. Informational only — each
+        // device row records its own provider.
+        'default_provider' => env('PUSH_DEFAULT_PROVIDER', 'fcm'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Audit Trail
     |--------------------------------------------------------------------------
     |

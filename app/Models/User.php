@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PushProvider;
 use App\Mail\PasswordResetLink;
 use App\Mail\VerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -67,6 +69,30 @@ class User extends Authenticatable implements LaratrustUser, MustVerifyEmail
     public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);
+    }
+
+    /**
+     * Get the push-notification devices registered to the user.
+     */
+    public function devices(): HasMany
+    {
+        return $this->hasMany(UserDevice::class);
+    }
+
+    /**
+     * Route FCM notifications to every Firebase token the user has registered.
+     *
+     * The FCM channel multicasts to the returned tokens, so a single
+     * notification reaches all of the user's Android/iOS/web installs.
+     *
+     * @return list<string>
+     */
+    public function routeNotificationForFcm(Notification $notification): array
+    {
+        return $this->devices()
+            ->forProvider(PushProvider::Fcm)
+            ->pluck('push_token')
+            ->all();
     }
 
     /**

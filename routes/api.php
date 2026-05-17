@@ -6,7 +6,9 @@ use App\Http\Controllers\Api\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\Auth\SharedAuthController;
 use App\Http\Controllers\Api\Auth\WebAuthController;
 use App\Http\Controllers\Api\Auth\WebSocialAuthController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\Me\DeviceController as MeDeviceController;
 use App\Http\Controllers\Api\Me\FileController as MeFileController;
 use Illuminate\Support\Facades\Route;
 
@@ -121,6 +123,24 @@ Route::prefix('auth/email')->group(function () {
 Route::middleware('auth:sanctum')->prefix('me')->name('me.')->group(function (): void {
     Route::get('/', [SharedAuthController::class, 'me'])->name('show');
     Route::get('/files', [MeFileController::class, 'index'])->name('files.index');
+    Route::get('/devices', [MeDeviceController::class, 'index'])->name('devices.index');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Devices (Push Notifications)
+|--------------------------------------------------------------------------
+|
+| Device token registry for push notifications (FCM out of the box; the
+| schema is provider-agnostic). Registration is idempotent and keyed by the
+| globally unique push token so a recycled device transfers ownership.
+| Listing owned devices lives under /me/devices (read-only Me\* layer).
+|
+*/
+
+Route::middleware('auth:sanctum')->prefix('devices')->name('devices.')->group(function (): void {
+    Route::post('/', [DeviceController::class, 'store'])->name('store');
+    Route::delete('/{device}', [DeviceController::class, 'destroy'])->name('destroy');
 });
 
 /*

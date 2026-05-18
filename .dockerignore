@@ -1,0 +1,58 @@
+# Version control / IDE
+.git
+.gitattributes
+.gitignore
+.github
+.idea
+.vscode
+.fleet
+.nova
+.zed
+.cursor
+.gemini
+.junie
+.claude
+
+# Local environment & secrets
+.env
+.env.*
+!.env.example
+auth.json
+
+# Build artefacts produced inside the image
+node_modules
+public/build
+public/hot
+public/storage
+storage/*.key
+storage/framework/cache/*
+!storage/framework/cache/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+storage/framework/testing/*
+!storage/framework/testing/.gitignore
+storage/logs/*
+!storage/logs/.gitignore
+storage/pail
+bootstrap/cache/*
+!bootstrap/cache/.gitignore
+vendor
+
+# Test/dev artefacts
+.phpunit.cache
+.phpunit.result.cache
+.phpactor.json
+Homestead.json
+Homestead.yaml
+Thumbs.db
+.DS_Store
+*.log
+
+# Repo-level docs not needed inside the runtime image
+docs/devlog
+
+# Docker bootstrap files themselves
+docker-compose.yml
+docker-compose.*.yml

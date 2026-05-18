@@ -1,0 +1,143 @@
+# Local development stack.
+#
+# Variables come from `docker/.env.docker` (copy from
+# docker/.env.docker.example). Compose reads it via `env_file`; the file is
+# *not* auto-loaded by `docker compose`, so commit your dev override there
+# rather than relying on the host shell.
+
+name: laravel-api-boilerplate
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+      args:
+        WWW_USER_ID: ${WWW_USER_ID:-1000}
+        WWW_GROUP_ID: ${WWW_GROUP_ID:-1000}
+    image: laravel-api-boilerplate-app:dev
+    command: ["php-fpm", "--nodaemonize"]
+    env_file:
+      - ./docker/.env.docker
+      - ./.env
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      RUN_MIGRATIONS: "0"
+      XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${CADDY_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./docker/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - .:/var/www/html
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - app
+
+  db:
+    image: postgres:17.10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-laravel}
+      POSTGRES_USER: ${DB_USERNAME:-laravel}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "${DB_FORWARD_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-laravel} -d ${DB_DATABASE:-laravel}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app
+
+  redis:
+    image: redis:8.6-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_FORWARD_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - app
+
+  queue:
+    image: laravel-api-boilerplate-app:dev
+    pull_policy: never
+    restart: unless-stopped
+    command:
+      - php
+      - artisan
+      - queue:work
+      - --tries=${QUEUE_TRIES:-3}
+      - --timeout=${QUEUE_TIMEOUT:-90}
+      - --sleep=${QUEUE_SLEEP:-3}
+      - --max-jobs=${QUEUE_MAX_JOBS:-1000}
+      - --max-time=${QUEUE_MAX_TIME:-3600}
+      - --backoff=${QUEUE_BACKOFF:-5}
+    env_file:
+      - ./docker/.env.docker
+      - ./.env
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      app:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+
+  scheduler:
+    image: laravel-api-boilerplate-app:dev
+    pull_policy: never
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    env_file:
+      - ./docker/.env.docker
+      - ./.env
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      app:
+        condition: service_started
+      db:
+        condition: service_healthy
+    networks:
+      - app
+
+networks:
+  app:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

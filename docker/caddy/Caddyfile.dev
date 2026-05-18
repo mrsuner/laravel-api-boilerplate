@@ -1,0 +1,26 @@
+# Local development Caddyfile — HTTP only, no automatic TLS.
+
+{
+    auto_https off
+    admin off
+    persist_config off
+}
+
+:80 {
+    root * /var/www/html/public
+
+    encode zstd gzip
+
+    php_fastcgi app:9000 {
+        # The bind-mounted source lives at the same path inside both caddy and
+        # app containers, so Caddy can hand absolute paths to PHP-FPM.
+        root /var/www/html/public
+    }
+
+    file_server
+
+    log {
+        output stdout
+        format console
+    }
+}

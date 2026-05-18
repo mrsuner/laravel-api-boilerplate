@@ -28,6 +28,7 @@ Per-feature docs for the Laravel API Boilerplate. Start with the area you're tou
 |---|---|
 | [notifications.md](notifications.md) | Auth event listeners (welcome / login / logout / reset) and customizing email templates |
 | [audit.md](audit.md) | Append-only audit log — `audit_log()` helper, Auditable trait, retention prune |
+| [docker.md](docker.md) | Dockerised stack — services, dev compose, multi-arch build/push, prod deploy flow |
 
 ## Devlog
 

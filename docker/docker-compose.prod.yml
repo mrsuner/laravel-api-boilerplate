@@ -1,0 +1,159 @@
+# Production stack.
+#
+# Run from the project root:
+#   docker compose --env-file docker/.env.prod -f docker/docker-compose.prod.yml up -d
+#
+# `image` references assume you've built and (optionally) pushed an image
+# tagged ${APP_IMAGE}:${APP_IMAGE_TAG}. Use `make build` to produce a
+# multi-arch image and `make push` to publish it.
+
+name: laravel-api-boilerplate-prod
+
+services:
+  app:
+    # Image is built and pushed from a developer / CI machine via `make push`;
+    # the server only pulls. Set APP_IMAGE / APP_IMAGE_TAG in docker/.env.prod
+    # to point at your registry coordinates.
+    image: ${APP_IMAGE:-laravel-api-boilerplate}:${APP_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command: ["php-fpm", "--nodaemonize"]
+    env_file:
+      - .env.prod
+    environment:
+      APP_ENV: production
+      # Migrations are run only by the app container on startup so workers
+      # can't race the schema change. Set to "0" to opt out (e.g. when you
+      # prefer running migrations as a one-shot job before deploy).
+      RUN_MIGRATIONS: "${RUN_MIGRATIONS:-1}"
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@fsockopen(\"127.0.0.1\", 9000) ? 0 : 1);'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    env_file:
+      - .env.prod
+    volumes:
+      - ./caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - app_storage:/var/www/html/storage:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - app
+
+  db:
+    image: postgres:17.10-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app
+
+  redis:
+    image: redis:8.6-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app
+
+  queue:
+    image: ${APP_IMAGE:-laravel-api-boilerplate}:${APP_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command:
+      - php
+      - artisan
+      - queue:work
+      - --tries=${QUEUE_TRIES:-3}
+      - --timeout=${QUEUE_TIMEOUT:-90}
+      - --sleep=${QUEUE_SLEEP:-3}
+      - --max-jobs=${QUEUE_MAX_JOBS:-1000}
+      - --max-time=${QUEUE_MAX_TIME:-3600}
+      - --backoff=${QUEUE_BACKOFF:-5}
+    env_file:
+      - .env.prod
+    environment:
+      APP_ENV: production
+      RUN_MIGRATIONS: "0"
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+
+  scheduler:
+    image: ${APP_IMAGE:-laravel-api-boilerplate}:${APP_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    env_file:
+      - .env.prod
+    environment:
+      APP_ENV: production
+      RUN_MIGRATIONS: "0"
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_started
+      db:
+        condition: service_healthy
+    networks:
+      - app
+
+networks:
+  app:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+  app_storage:

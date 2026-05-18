@@ -1,0 +1,33 @@
+# Production Caddyfile — automatic HTTPS via Let's Encrypt.
+#
+# The {$APP_DOMAIN} and {$ACME_EMAIL} placeholders are expanded from the
+# environment loaded by docker-compose.prod.yml (docker/.env.prod).
+
+{
+    email {$ACME_EMAIL}
+}
+
+{$APP_DOMAIN} {
+    root * /var/www/html/public
+
+    encode zstd gzip
+
+    php_fastcgi app:9000 {
+        root /var/www/html/public
+    }
+
+    file_server
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "DENY"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}

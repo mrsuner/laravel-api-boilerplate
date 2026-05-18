@@ -14,9 +14,8 @@ return new class extends Migration
         Schema::create('social_accounts', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('user_id')
-                ->constrained()
-                ->cascadeOnDelete()
-                ->name('fk_social_accounts__user_id__users');
+                ->constrained(indexName: 'fk_social_accounts__user_id__users')
+                ->cascadeOnDelete();
             $table->string('provider');
             $table->string('provider_id');
             $table->string('provider_email')->nullable();

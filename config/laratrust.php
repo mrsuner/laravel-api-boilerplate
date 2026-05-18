@@ -118,10 +118,10 @@ return [
 
         'permission' => \App\Models\Permission::class,
 
-        /**
-         * Will be used only if the teams functionality is enabled.
+        /*
+         * Teams feature is disabled (see 'teams.enabled' below) so the team
+         * model is intentionally unset. Restore it if you enable teams.
          */
-        'team' => \App\Models\Team::class,
     ],
 
     /*

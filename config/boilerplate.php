@@ -391,4 +391,57 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Internal Admin Module
+    |--------------------------------------------------------------------------
+    |
+    | Self-contained management API mounted under /internal/admin/v1. Every
+    | endpoint is protected by an IP whitelist (Tailscale CIDR by default) and
+    | a Sanctum token carrying the `admin` ability. Admin identity reuses the
+    | existing users table — a user is an admin when they hold the `admin`
+    | Laratrust role. Set `enabled` to false to remove the routes entirely.
+    |
+    */
+
+    'admin' => [
+        'enabled' => env('ADMIN_ENABLED', true),
+
+        'ip_whitelist' => [
+            'enabled' => env('ADMIN_IP_WHITELIST_ENABLED', true),
+
+            /*
+             * Comma-separated list of allowed CIDRs.
+             * Default: Tailscale CGNAT range (100.64.0.0/10).
+             * Set to empty string to allow all IPs (not recommended for production).
+             */
+            'cidrs' => array_filter(
+                explode(',', (string) env('ADMIN_ALLOWED_CIDRS', '100.64.0.0/10'))
+            ),
+        ],
+
+        /*
+         * Sanctum token ability assigned to admin sessions.
+         * Used in middleware: ability:admin
+         */
+        'token_ability' => 'admin',
+
+        /*
+         * Admin session token lifetime in hours.
+         */
+        'token_ttl_hours' => env('ADMIN_TOKEN_TTL_HOURS', 8),
+
+        /*
+         * Runtime-toggleable config keys exposed by the admin config endpoint.
+         * Keys are relative to the boilerplate config namespace. Only the keys
+         * listed here can be read via GET /config or mutated via PUT /config —
+         * never expose secrets. Changes are in-memory only (see controller).
+         */
+        'config_whitelist' => [
+            'auth.otp_auth_enabled',
+            'auth.password_auth_enabled',
+            'audit.enabled',
+        ],
+    ],
+
 ];

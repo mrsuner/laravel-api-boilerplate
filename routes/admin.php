@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminConfigController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Middleware\EnsureAdminAccess;
 use App\Http\Middleware\InternalIpWhitelist;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
@@ -22,7 +23,7 @@ Route::prefix('internal/admin/v1')
         Route::post('auth/login', [AdminAuthController::class, 'login'])->name('auth.login');
 
         // All routes below require a valid admin-scoped Sanctum token
-        Route::middleware(['auth:sanctum', CheckForAnyAbility::class.':admin'])
+        Route::middleware(['auth:sanctum', CheckForAnyAbility::class.':admin', EnsureAdminAccess::class])
             ->group(function () {
                 Route::post('auth/logout', [AdminAuthController::class, 'logout'])->name('auth.logout');
                 Route::get('auth/me', [AdminAuthController::class, 'me'])->name('auth.me');

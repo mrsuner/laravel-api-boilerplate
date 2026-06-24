@@ -207,4 +207,19 @@ class AdminUserTest extends TestCase
 
         $this->assertTrue($this->admin->fresh()->hasRole('admin'));
     }
+
+    public function test_revoking_admin_role_revokes_admin_tokens(): void
+    {
+        $other = User::factory()->create(['is_active' => true]);
+        $other->addRole('admin');
+        $other->createToken('admin-session', ['admin']);
+        $other->createToken('mobile-app');
+
+        $response = $this->deleteJson("/internal/admin/v1/users/{$other->id}/roles/admin");
+
+        $response->assertStatus(200);
+        $this->assertFalse($other->fresh()->hasRole('admin'));
+        $this->assertSame(1, $other->fresh()->tokens()->count());
+        $this->assertSame('mobile-app', $other->fresh()->tokens()->first()->name);
+    }
 }

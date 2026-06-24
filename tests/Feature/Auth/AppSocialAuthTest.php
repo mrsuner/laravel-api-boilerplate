@@ -121,6 +121,36 @@ class AppSocialAuthTest extends TestCase
         ]);
     }
 
+    public function test_callback_rejects_unverified_provider_email_for_existing_user(): void
+    {
+        config(['boilerplate.auth.socialite_providers.google' => true]);
+
+        User::factory()->create([
+            'email' => 'existing@example.com',
+            'is_active' => true,
+        ]);
+
+        $this->mockSocialiteUser('google', [
+            'id' => 'google-123',
+            'name' => 'Existing User',
+            'email' => 'existing@example.com',
+            'raw' => ['email_verified' => false],
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/app/social/google/callback', [
+            'code' => 'test-code',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        $this->assertCount(1, User::all());
+        $this->assertDatabaseMissing('social_accounts', [
+            'provider' => 'google',
+            'provider_id' => 'google-123',
+        ]);
+    }
+
     public function test_callback_returns_existing_social_account_user(): void
     {
         $user = User::factory()->create(['is_active' => true]);
@@ -380,6 +410,7 @@ class AppSocialAuthTest extends TestCase
         $socialiteUser->token = $userData['token'] ?? 'mock-token';
         $socialiteUser->refreshToken = $userData['refresh_token'] ?? null;
         $socialiteUser->expiresIn = $userData['expires_in'] ?? 3600;
+        $socialiteUser->user = $userData['raw'] ?? [];
 
         Socialite::shouldReceive('driver')
             ->with($provider)

@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -59,6 +60,13 @@ trait HandlesSocialiteAuth
 
         // No existing social account, check if user with same email exists
         $email = $socialUser->getEmail();
+
+        if ($email === null || ! $this->socialEmailIsTrusted($socialUser, $provider)) {
+            throw ValidationException::withMessages([
+                'email' => ['The social account email is not verified by the provider.'],
+            ]);
+        }
+
         $user = $email ? User::where('email', $email)->first() : null;
 
         if (! $user) {
@@ -108,5 +116,37 @@ trait HandlesSocialiteAuth
                 ? now()->addSeconds($socialUser->expiresIn)
                 : null,
         ]);
+    }
+
+    private function socialEmailIsTrusted(SocialiteUser $socialUser, string $provider): bool
+    {
+        if ($provider === 'github') {
+            return true;
+        }
+
+        $raw = $this->rawSocialiteUser($socialUser);
+
+        return match ($provider) {
+            'google', 'linkedin', 'linkedin-openid' => data_get($raw, 'email_verified') === true
+                || data_get($raw, 'verified_email') === true,
+            'facebook' => data_get($raw, 'verified') === true,
+            default => false,
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function rawSocialiteUser(SocialiteUser $socialUser): array
+    {
+        if (method_exists($socialUser, 'getRaw')) {
+            $raw = $socialUser->getRaw();
+
+            return is_array($raw) ? $raw : [];
+        }
+
+        $raw = $socialUser->user ?? [];
+
+        return is_array($raw) ? $raw : [];
     }
 }

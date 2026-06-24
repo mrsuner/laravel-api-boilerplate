@@ -42,6 +42,8 @@ class WebSocialAuthTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure(['data' => ['redirect_url']]);
+
+        $this->assertStringContainsString('state=', $response->json('data.redirect_url'));
     }
 
     public function test_cannot_get_redirect_url_for_disabled_provider(): void
@@ -57,6 +59,8 @@ class WebSocialAuthTest extends TestCase
 
     public function test_callback_creates_new_user_and_establishes_session(): void
     {
+        $state = $this->seedSocialState('github', 'login');
+
         $this->mockSocialiteUser('github', [
             'id' => '12345',
             'name' => 'GitHub User',
@@ -66,6 +70,7 @@ class WebSocialAuthTest extends TestCase
 
         $response = $this->postJson('/api/v1/auth/web/social/github/callback', [
             'code' => 'test-code',
+            'state' => $state,
         ]);
 
         $response->assertStatus(200)
@@ -84,6 +89,8 @@ class WebSocialAuthTest extends TestCase
 
     public function test_callback_links_existing_user_with_same_email(): void
     {
+        $state = $this->seedSocialState('github', 'login');
+
         $user = User::factory()->create([
             'email' => 'existing@example.com',
             'is_active' => true,
@@ -97,6 +104,7 @@ class WebSocialAuthTest extends TestCase
 
         $response = $this->postJson('/api/v1/auth/web/social/github/callback', [
             'code' => 'test-code',
+            'state' => $state,
         ]);
 
         $response->assertStatus(200);
@@ -109,8 +117,43 @@ class WebSocialAuthTest extends TestCase
         ]);
     }
 
+    public function test_callback_rejects_unverified_provider_email_for_existing_user(): void
+    {
+        $state = $this->seedSocialState('google', 'login');
+
+        config(['boilerplate.auth.socialite_providers.google' => true]);
+
+        User::factory()->create([
+            'email' => 'existing@example.com',
+            'is_active' => true,
+        ]);
+
+        $this->mockSocialiteUser('google', [
+            'id' => 'google-123',
+            'name' => 'Existing User',
+            'email' => 'existing@example.com',
+            'raw' => ['email_verified' => false],
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/web/social/google/callback', [
+            'code' => 'test-code',
+            'state' => $state,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        $this->assertCount(1, User::all());
+        $this->assertDatabaseMissing('social_accounts', [
+            'provider' => 'google',
+            'provider_id' => 'google-123',
+        ]);
+    }
+
     public function test_callback_returns_existing_social_account_user(): void
     {
+        $state = $this->seedSocialState('github', 'login');
+
         $user = User::factory()->create(['is_active' => true]);
         SocialAccount::create([
             'user_id' => $user->id,
@@ -128,6 +171,7 @@ class WebSocialAuthTest extends TestCase
 
         $response = $this->postJson('/api/v1/auth/web/social/github/callback', [
             'code' => 'test-code',
+            'state' => $state,
         ]);
 
         $response->assertStatus(200)
@@ -139,6 +183,8 @@ class WebSocialAuthTest extends TestCase
 
     public function test_callback_rejects_inactive_user(): void
     {
+        $state = $this->seedSocialState('github', 'login');
+
         $user = User::factory()->create([
             'email' => 'inactive@example.com',
             'is_active' => false,
@@ -157,16 +203,39 @@ class WebSocialAuthTest extends TestCase
 
         $response = $this->postJson('/api/v1/auth/web/social/github/callback', [
             'code' => 'test-code',
+            'state' => $state,
         ]);
 
         $response->assertStatus(403)
             ->assertJson(['message' => 'Account is inactive.']);
     }
 
+    public function test_callback_rejects_missing_or_mismatched_state(): void
+    {
+        $this->seedSocialState('github', 'login');
+
+        $this->postJson('/api/v1/auth/web/social/github/callback', [
+            'code' => 'test-code',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['state']);
+
+        $this->seedSocialState('github', 'login');
+
+        $this->postJson('/api/v1/auth/web/social/github/callback', [
+            'code' => 'test-code',
+            'state' => 'wrong-state',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['state']);
+    }
+
     // === Session Persistence Tests ===
 
     public function test_session_persists_after_callback(): void
     {
+        $state = $this->seedSocialState('github', 'login');
+
         $this->mockSocialiteUser('github', [
             'id' => '12345',
             'name' => 'GitHub User',
@@ -175,6 +244,7 @@ class WebSocialAuthTest extends TestCase
 
         $this->postJson('/api/v1/auth/web/social/github/callback', [
             'code' => 'test-code',
+            'state' => $state,
         ]);
 
         // Make multiple requests to verify session
@@ -240,10 +310,14 @@ class WebSocialAuthTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure(['data' => ['redirect_url']]);
+
+        $this->assertStringContainsString('state=', $response->json('data.redirect_url'));
     }
 
     public function test_can_complete_link_social_account(): void
     {
+        $state = $this->seedSocialState('github', 'link');
+
         $user = User::factory()->create([
             'password' => Hash::make('password123'),
             'is_active' => true,
@@ -263,6 +337,7 @@ class WebSocialAuthTest extends TestCase
 
         $response = $this->postJson('/api/v1/auth/web/social/github/link/callback', [
             'code' => 'test-code',
+            'state' => $state,
         ]);
 
         $response->assertStatus(200)
@@ -273,6 +348,28 @@ class WebSocialAuthTest extends TestCase
             'provider' => 'github',
             'provider_id' => '99999',
         ]);
+    }
+
+    public function test_link_callback_rejects_mismatched_state(): void
+    {
+        $state = $this->seedSocialState('github', 'login');
+
+        $user = User::factory()->create([
+            'password' => Hash::make('password123'),
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/v1/auth/web/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $this->postJson('/api/v1/auth/web/social/github/link/callback', [
+            'code' => 'test-code',
+            'state' => $state,
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['state']);
     }
 
     public function test_can_unlink_social_account(): void
@@ -336,6 +433,7 @@ class WebSocialAuthTest extends TestCase
         $socialiteUser->token = $userData['token'] ?? 'mock-token';
         $socialiteUser->refreshToken = $userData['refresh_token'] ?? null;
         $socialiteUser->expiresIn = $userData['expires_in'] ?? 3600;
+        $socialiteUser->user = $userData['raw'] ?? [];
 
         Socialite::shouldReceive('driver')
             ->with($provider)
@@ -344,5 +442,21 @@ class WebSocialAuthTest extends TestCase
                     'user' => $socialiteUser,
                 ]),
             ]));
+    }
+
+    private function seedSocialState(string $provider, string $purpose): string
+    {
+        $state = "state-{$purpose}-{$provider}";
+
+        $this->withSession([
+            $this->socialStateKey($provider, $purpose) => $state,
+        ]);
+
+        return $state;
+    }
+
+    private function socialStateKey(string $provider, string $purpose): string
+    {
+        return "auth.web.social.{$purpose}.{$provider}.state";
     }
 }

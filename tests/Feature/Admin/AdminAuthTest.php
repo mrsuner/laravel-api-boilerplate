@@ -135,4 +135,38 @@ class AdminAuthTest extends TestCase
             ->getJson('/internal/admin/v1/auth/me')
             ->assertStatus(403);
     }
+
+    public function test_wildcard_token_is_forbidden_for_admin_api(): void
+    {
+        $admin = $this->createAdmin();
+        $token = $admin->createToken('mobile-app')->plainTextToken;
+
+        $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->getJson('/internal/admin/v1/auth/me')
+            ->assertStatus(403);
+    }
+
+    public function test_admin_token_is_forbidden_after_admin_role_is_removed(): void
+    {
+        $admin = $this->createAdmin();
+        $token = $admin->createToken('admin-session', ['admin'])->plainTextToken;
+
+        $admin->removeRole('admin');
+
+        $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->getJson('/internal/admin/v1/auth/me')
+            ->assertStatus(403);
+    }
+
+    public function test_admin_token_is_forbidden_when_admin_account_is_inactive(): void
+    {
+        $admin = $this->createAdmin();
+        $token = $admin->createToken('admin-session', ['admin'])->plainTextToken;
+
+        $admin->update(['is_active' => false]);
+
+        $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->getJson('/internal/admin/v1/auth/me')
+            ->assertStatus(403);
+    }
 }

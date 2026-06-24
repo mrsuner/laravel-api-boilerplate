@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\Me\DeviceController as MeDeviceController;
 use App\Http\Controllers\Api\Me\FileController as MeFileController;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,7 +61,7 @@ Route::prefix('auth/app')->group(function () {
 |
 */
 
-Route::prefix('auth/web')->group(function () {
+Route::prefix('auth/web')->middleware(StartSession::class)->group(function () {
     // Public routes
     Route::post('/register', [WebAuthController::class, 'register'])->middleware('throttle:auth-register');
     Route::post('/login', [WebAuthController::class, 'login'])->middleware('throttle:auth-login');

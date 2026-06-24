@@ -178,6 +178,10 @@ class AdminUserController extends Controller
 
         $user->removeRole($role);
 
+        if ($role === 'admin') {
+            $this->revokeAdminTokens($user);
+        }
+
         audit_log('admin.user.role_revoked', $user, [
             'metadata' => ['role' => $role],
             'user' => auth()->user(),
@@ -195,5 +199,16 @@ class AdminUserController extends Controller
         }
 
         return min($perPage, 100);
+    }
+
+    private function revokeAdminTokens(User $user): void
+    {
+        $user->tokens()->get()->each(function ($token): void {
+            $ability = (string) config('boilerplate.admin.token_ability', 'admin');
+
+            if (in_array($ability, (array) $token->abilities, true)) {
+                $token->delete();
+            }
+        });
     }
 }

@@ -74,6 +74,47 @@ class AppAuthTest extends TestCase
             ->assertJsonValidationErrors(['password']);
     }
 
+    public function test_password_auth_endpoints_return_not_found_when_disabled(): void
+    {
+        config()->set('boilerplate.auth.password_auth_enabled', false);
+
+        $user = User::factory()->create([
+            'password' => Hash::make('password123'),
+            'is_active' => true,
+        ]);
+        $token = $user->createToken('test')->plainTextToken;
+
+        $this->postJson('/api/v1/auth/app/register', [
+            'name' => 'Test User',
+            'email' => 'disabled-register@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertStatus(404);
+
+        $this->postJson('/api/v1/auth/app/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ])->assertStatus(404);
+
+        $this->postJson('/api/v1/auth/app/forgot-password', [
+            'email' => $user->email,
+        ])->assertStatus(404);
+
+        $this->postJson('/api/v1/auth/app/reset-password', [
+            'token' => 'reset-token',
+            'email' => $user->email,
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ])->assertStatus(404);
+
+        $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->postJson('/api/v1/auth/app/change-password', [
+                'current_password' => 'password123',
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ])->assertStatus(404);
+    }
+
     // === Login Tests ===
 
     public function test_can_login_with_valid_credentials(): void
@@ -155,6 +196,20 @@ class AppAuthTest extends TestCase
 
         $this->assertDatabaseHas('otps', ['identifier' => 'test@example.com']);
         Mail::assertSent(LoginOtp::class);
+    }
+
+    public function test_otp_endpoints_return_not_found_when_disabled(): void
+    {
+        config()->set('boilerplate.auth.otp_auth_enabled', false);
+
+        $this->postJson('/api/v1/auth/app/otp', [
+            'email' => 'test@example.com',
+        ])->assertStatus(404);
+
+        $this->postJson('/api/v1/auth/app/otp/verify', [
+            'email' => 'test@example.com',
+            'token' => '123456',
+        ])->assertStatus(404);
     }
 
     public function test_can_verify_otp_and_get_token(): void

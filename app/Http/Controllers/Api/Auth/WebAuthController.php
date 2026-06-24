@@ -57,6 +57,8 @@ class WebAuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
+        $this->ensurePasswordAuthEnabled();
+
         $user = User::create([
             'name' => $request->input('name'),
             'email' => $request->input('email'),
@@ -98,6 +100,8 @@ class WebAuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
+        $this->ensurePasswordAuthEnabled();
+
         $user = User::where('email', $request->input('email'))->first();
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
@@ -145,6 +149,8 @@ class WebAuthController extends Controller
      */
     public function requestOtp(OtpRequest $request, OtpService $otpService): JsonResponse
     {
+        $this->ensureOtpAuthEnabled();
+
         $email = $request->input('email');
         $token = $otpService->create($email);
 
@@ -178,6 +184,8 @@ class WebAuthController extends Controller
      */
     public function verifyOtp(OtpVerifyRequest $request, OtpService $otpService): JsonResponse
     {
+        $this->ensureOtpAuthEnabled();
+
         $email = $request->input('email');
         $otpToken = $request->input('token');
 
@@ -244,6 +252,8 @@ class WebAuthController extends Controller
      */
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
+        $this->ensurePasswordAuthEnabled();
+
         $status = Password::sendResetLink(
             $request->only('email')
         );
@@ -279,6 +289,8 @@ class WebAuthController extends Controller
      */
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
+        $this->ensurePasswordAuthEnabled();
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user, string $password) {
@@ -355,10 +367,26 @@ class WebAuthController extends Controller
      */
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
+        $this->ensurePasswordAuthEnabled();
+
         $request->user()->update([
             'password' => Hash::make($request->input('password')),
         ]);
 
         return $this->respondOk(message: 'Password changed successfully.');
+    }
+
+    private function ensurePasswordAuthEnabled(): void
+    {
+        if (! config('boilerplate.auth.password_auth_enabled', true)) {
+            abort(404);
+        }
+    }
+
+    private function ensureOtpAuthEnabled(): void
+    {
+        if (! config('boilerplate.auth.otp_auth_enabled', true)) {
+            abort(404);
+        }
     }
 }

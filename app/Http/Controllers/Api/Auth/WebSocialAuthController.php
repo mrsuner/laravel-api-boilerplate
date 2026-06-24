@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -39,9 +41,10 @@ class WebSocialAuthController extends Controller
      *   "errors": {"provider": ["The selected provider is invalid."]}
      * }
      */
-    public function redirect(string $provider): JsonResponse
+    public function redirect(string $provider, Request $request): JsonResponse
     {
         $this->validateProvider($provider);
+        $state = $this->issueSocialState($request, $provider, 'login');
 
         $url = Socialite::driver($provider)
             ->stateless()
@@ -49,7 +52,7 @@ class WebSocialAuthController extends Controller
             ->getTargetUrl();
 
         return $this->respondOk([
-            'redirect_url' => $url,
+            'redirect_url' => $this->appendStateToUrl($url, $state),
         ]);
     }
 
@@ -81,6 +84,7 @@ class WebSocialAuthController extends Controller
     public function callback(string $provider, SocialCallbackRequest $request): JsonResponse
     {
         $this->validateProvider($provider);
+        $this->validateSocialState($request, $provider, 'login');
 
         $socialUser = Socialite::driver($provider)
             ->stateless()
@@ -148,9 +152,10 @@ class WebSocialAuthController extends Controller
      *   "errors": {"provider": ["The selected provider is invalid."]}
      * }
      */
-    public function link(string $provider): JsonResponse
+    public function link(string $provider, Request $request): JsonResponse
     {
         $this->validateProvider($provider);
+        $state = $this->issueSocialState($request, $provider, 'link');
 
         $url = Socialite::driver($provider)
             ->stateless()
@@ -158,7 +163,7 @@ class WebSocialAuthController extends Controller
             ->getTargetUrl();
 
         return $this->respondOk([
-            'redirect_url' => $url,
+            'redirect_url' => $this->appendStateToUrl($url, $state),
         ]);
     }
 
@@ -190,6 +195,7 @@ class WebSocialAuthController extends Controller
     public function linkCallback(string $provider, SocialCallbackRequest $request): JsonResponse
     {
         $this->validateProvider($provider);
+        $this->validateSocialState($request, $provider, 'link');
 
         $user = $request->user();
         $socialUser = Socialite::driver($provider)
@@ -289,5 +295,38 @@ class WebSocialAuthController extends Controller
         $account->delete();
 
         return $this->respondOk(message: 'Social account unlinked successfully.');
+    }
+
+    private function issueSocialState(Request $request, string $provider, string $purpose): string
+    {
+        $state = Str::random(40);
+
+        $request->session()->put($this->socialStateKey($provider, $purpose), $state);
+
+        return $state;
+    }
+
+    private function validateSocialState(Request $request, string $provider, string $purpose): void
+    {
+        $state = $request->input('state');
+        $expected = $request->session()->pull($this->socialStateKey($provider, $purpose));
+
+        if (! is_string($state) || $state === '' || ! is_string($expected) || ! hash_equals($expected, $state)) {
+            throw ValidationException::withMessages([
+                'state' => ['Invalid social authentication state.'],
+            ]);
+        }
+    }
+
+    private function socialStateKey(string $provider, string $purpose): string
+    {
+        return "auth.web.social.{$purpose}.{$provider}.state";
+    }
+
+    private function appendStateToUrl(string $url, string $state): string
+    {
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url.$separator.http_build_query(['state' => $state]);
     }
 }

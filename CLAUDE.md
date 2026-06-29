@@ -209,4 +209,80 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - To run all tests: `php artisan test`.
 - To run all tests in a file: `php artisan test tests/Feature/ExampleTest.php`.
 - To filter on a particular test name: `php artisan test --filter=testName` (recommended after making a change to a related file).
+
+
+=== project/boilerplate rules ===
+
+## Boilerplate Architecture
+
+- This project is an API-first Laravel boilerplate. Prefer small, explicit HTTP controllers, domain-oriented services, Form Requests, API Resources, model factories, and PHPUnit tests.
+- Follow the existing folder structure before introducing new base folders. Do not add new architectural layers such as `Actions`, `UseCases`, `DTOs`, or `Repositories` unless the existing code or the user explicitly calls for them.
+- Existing project structure overrides generic Laravel skeleton assumptions. For example, this project currently uses `app/Http/Middleware/`; do not remove or avoid it only because a generic Laravel 12 guideline says middleware may be registered differently.
+
+## Organization Structure
+
+- HTTP controllers live under:
+  - `App\Http\Controllers\Api` for versioned client API endpoints.
+  - `App\Http\Controllers\Api\Auth` for app/web/social authentication flows.
+  - `App\Http\Controllers\Api\Me` for authenticated current-user resources.
+  - `App\Http\Controllers\Admin` for internal admin endpoints.
+- Form Requests live under `App\Http\Requests\{Domain}` and should mirror the feature domain, such as `Auth`, `Admin`, `Files`, `Devices`, or `Me`.
+- API Resources live under `App\Http\Resources` or `App\Http\Resources\Admin` when the response shape is admin-specific.
+- Services live under `App\Services\{Domain}`. Service contracts live under `App\Services\{Domain}\Contracts` only when there are multiple implementations or container binding is useful.
+- Domain-specific jobs, listeners, mail, notifications, enums, factories, and seeders should follow existing sibling patterns and naming.
+
+## Controller Rules
+
+- Controllers should stay thin and focus on HTTP concerns:
+  - Authorize/authenticate the request.
+  - Accept validated input through Form Request classes.
+  - Delegate reusable or multi-step business workflows to services.
+  - Return responses through existing response helpers and API Resources.
+- Do not put reusable business workflows, multi-model writes, external service coordination, or transaction-heavy logic directly in controllers.
+- Prefer constructor injection for controller dependencies:
+  - `public function __construct(private readonly FileService $files) {}`
+- Use route model binding when appropriate, but keep ownership and authorization checks explicit.
+- Use existing response helper methods such as `respondOk`, `respondCreated`, `respondNoContent`, `respondPaginated`, `respondError`, and `respondNotFound` when available.
+
+## Service Rules
+
+- Services should represent domain workflows, not HTTP request handling.
+- Service namespace pattern:
+  - `App\Services\Files\FileService`
+  - `App\Services\Otp\DatabaseDriver`
+  - `App\Services\Otp\Contracts\OtpService`
+- Services should accept models, scalar values, value arrays, or framework objects that are appropriate for the domain. Avoid passing `Request` objects into services.
+- Services should return models, collections, DTO-like arrays, booleans, or void depending on the operation. They should not return `JsonResponse`.
+- Keep model-local state transitions on the model when the behavior only affects that model, such as `File::claim()`. Put cross-model or cross-system workflows in a service.
+- Bind interfaces in a service provider when multiple implementations exist or config selects an implementation.
+
+## Database Transactions
+
+- Use `DB::transaction()` for workflows that must commit or roll back as one unit, especially when:
+  - Creating or updating multiple related models.
+  - Combining model writes with role/token changes.
+  - Claiming uploaded files while creating a parent record.
+  - Writing audit logs that must match the business mutation.
+- `DB::transaction()` is an acceptable exception to the general "avoid `DB::`" rule. Keep the actual reads/writes inside the transaction using Eloquent models and relationships where possible.
+- Prefer placing transactions in the service layer, not the controller, when the transaction protects business invariants.
+- Do not include slow external I/O inside a transaction, such as HTTP calls, file uploads, mail delivery, notifications, or queue work.
+- When dispatching jobs, events, notifications, or mailables related to data created inside a transaction, prefer after-commit behavior or dispatch after the transaction has committed.
+- Let exceptions bubble out of the transaction unless a domain-specific error response is required at the controller boundary.
+
+## Testing Expectations
+
+- Every new or changed controller endpoint must have a matching Feature test under `tests/Feature/{Domain}`.
+- Controller Feature tests should cover:
+  - Happy path response status and JSON shape.
+  - Validation failure through the Form Request.
+  - Authentication and authorization failure.
+  - Important config-disabled or feature-flag branches.
+  - Database side effects and absence of sensitive fields.
+- Every new or changed service must have focused tests.
+- Use `tests/Unit/{Domain}` for pure services that can be tested without booting the Laravel application, database, filesystem, cache, or queue.
+- Use `tests/Feature/Services/{Domain}` when the service depends on Laravel infrastructure such as Eloquent, database transactions, cache, storage, events, or container bindings.
+- Prefer factories and Laravel fakes such as `Storage::fake()`, `Mail::fake()`, `Notification::fake()`, `Queue::fake()`, and `Event::fake()` over hand-rolled test doubles.
+- After adding or updating a controller, run the related feature test file.
+- After adding or updating a service, run the related unit or service feature test file.
+- Always run `vendor/bin/pint --dirty` before finalizing code changes.
 </laravel-boost-guidelines>

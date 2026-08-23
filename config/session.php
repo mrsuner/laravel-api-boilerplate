@@ -51,6 +51,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Session Serialization
+    |--------------------------------------------------------------------------
+    |
+    | JSON serialization avoids PHP object deserialization risks. Switching an
+    | existing application from PHP serialization invalidates active sessions.
+    |
+    | Supported: "json", "php"
+    |
+    */
+
+    'serialization' => env('SESSION_SERIALIZATION', 'json'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Session File Location
     |--------------------------------------------------------------------------
     |

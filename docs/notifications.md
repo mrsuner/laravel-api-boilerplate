@@ -92,7 +92,7 @@ Edit Blade for branding/wording, or swap the mailable for a Notification class i
        Mail::to($event->user)->send(new MyMail);
    }
    ```
-3. Listeners in `app/Listeners/` are auto-discovered in Laravel 12 — no manual registration needed.
+3. Listeners in `app/Listeners/` are auto-discovered by Laravel — no manual registration needed.
 
 ## Key Points
 

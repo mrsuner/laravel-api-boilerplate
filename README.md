@@ -1,6 +1,6 @@
 # Laravel API Boilerplate
 
-A robust starter template designed to streamline RESTful API development with Laravel 12. This boilerplate comes pre-configured with essential tools and libraries to ensure code quality, documentation, and maintainability.
+A robust starter template designed to streamline RESTful API development with Laravel 13. This boilerplate comes pre-configured with essential tools and libraries to ensure code quality, documentation, and maintainability.
 
 ## Why another boilerplate?
 
@@ -12,7 +12,7 @@ This boilerplate is target to let any developers familiar with Laravel to quickl
 
 ## 🚀 Features
 
-- **Framework**: [Laravel 12](https://laravel.com)
+- **Framework**: [Laravel 13](https://laravel.com) (PHP 8.3+)
 - **Authentication**: Dual token + cookie auth (Sanctum), password / OTP / OAuth, signed-URL email verification
 - **Configurable security**: per-endpoint rate limits, `Password::defaults()` policy, login email-verification gate
 - **Standard API envelope**: base `Controller` response helpers plus a global exception → JSON renderer

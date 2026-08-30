@@ -1,13 +1,21 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "mrsuner/laravel-api-boilerplate",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "A production-ready headless Laravel API boilerplate.",
     "keywords": [
         "laravel",
-        "framework"
+        "framework",
+        "api",
+        "boilerplate",
+        "headless"
     ],
     "license": "MIT",
+    "homepage": "https://github.com/mrsuner/laravel-api-boilerplate",
+    "support": {
+        "issues": "https://github.com/mrsuner/laravel-api-boilerplate/issues",
+        "source": "https://github.com/mrsuner/laravel-api-boilerplate"
+    },
     "require": {
         "php": "^8.3",
         "knuckleswtf/scribe": "^5.6",

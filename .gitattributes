@@ -7,5 +7,11 @@
 *.php diff=php
 
 /.github export-ignore
-CHANGELOG.md export-ignore
+.claude export-ignore
+.cursor export-ignore
+.mcp.json export-ignore
+.vscode export-ignore
+AGENTS.md export-ignore
+CLAUDE.md export-ignore
+GEMINI.md export-ignore
 .styleci.yml export-ignore

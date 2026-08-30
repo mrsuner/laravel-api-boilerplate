@@ -2,6 +2,10 @@
 
 A robust starter template designed to streamline RESTful API development with Laravel 13. This boilerplate comes pre-configured with essential tools and libraries to ensure code quality, documentation, and maintainability.
 
+[![Tests](https://github.com/mrsuner/laravel-api-boilerplate/actions/workflows/tests.yml/badge.svg)](https://github.com/mrsuner/laravel-api-boilerplate/actions/workflows/tests.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/mrsuner/laravel-api-boilerplate.svg)](https://packagist.org/packages/mrsuner/laravel-api-boilerplate)
+[![License](https://img.shields.io/github/license/mrsuner/laravel-api-boilerplate)](LICENSE)
+
 ## Why another boilerplate?
 
 Recently I have discovered some baas services and project, e.g. supabase, firebase, pocketbase and Tailbase. They are great and can help developers a lot to sketch up a prototype quickly.
@@ -44,29 +48,42 @@ Per-feature docs live in [`docs/`](docs/README.md). The index links every module
 
 ## 🛠 Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd laravel-api-boilerplate
-   ```
+Choose one of the following installation paths.
 
-2. **Install Dependencies**
-   ```bash
-   composer install
-   npm install
-   ```
+### GitHub Template
 
-3. **Environment Setup**
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
+Click **Use this template** on the [GitHub repository](https://github.com/mrsuner/laravel-api-boilerplate), create your application repository, then clone it locally. This is the recommended path when you want a fresh Git history and GitHub repository workflow.
 
-4. **Database Setup**
-   Configure your database credentials in `.env`, then run:
-   ```bash
-   php artisan migrate --seed
-   ```
+### Composer
+
+```bash
+composer create-project mrsuner/laravel-api-boilerplate my-api "^1.0"
+cd my-api
+```
+
+Composer creates a clean application without the boilerplate's Git history, copies `.env.example`, generates `APP_KEY`, creates the default SQLite database, and runs migrations.
+
+### Git clone
+
+```bash
+git clone https://github.com/mrsuner/laravel-api-boilerplate.git my-api
+cd my-api
+```
+
+Clone preserves the boilerplate repository history. Remove or replace the `origin` remote before starting your own project.
+
+### Finish a Template or clone installation
+
+```bash
+composer install
+npm ci
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run build
+```
+
+SQLite works by default. Configure another database in `.env` before migration when required.
 
 ## ⚡ Usage
 
@@ -106,4 +123,4 @@ php artisan scribe:generate
 
 ## 📄 License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Laravel API Boilerplate is open-sourced software licensed under the [MIT license](LICENSE).

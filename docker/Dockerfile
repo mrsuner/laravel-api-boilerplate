@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/tmp/cache \
 # ------------------------------------------------------------------------------
 # Stage: assets — build front-end bundle with Vite
 # ------------------------------------------------------------------------------
-FROM node:22-alpine AS assets
+FROM node:22.23.4-alpine AS assets
 
 WORKDIR /app
 

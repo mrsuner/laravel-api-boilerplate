@@ -23,7 +23,6 @@ This boilerplate is target to let any developers familiar with Laravel to quickl
 - **API Documentation**: Automated docs via [Scribe](https://scribe.knuckles.wtf/)
 - **Roles & Permissions**: Manage access control with [Laratrust](https://laratrust.santigarcor.me/)
 - **File uploads**: Two-phase upload with TTL + scheduled cleanup; works with `local` or `s3`
-- **Data Transfer Objects**: Type-safe data handling using [Spatie Laravel Data](https://spatie.be/docs/laravel-data)
 - **Code Quality**: Automated code styling with [Laravel Pint](https://laravel.com/docs/pint)
 - **Testing**: Comprehensive testing suite with [PHPUnit](https://phpunit.de/)
 - **AI integration**: Laravel Boost MCP and shared agent rules (`CLAUDE.md` / `AGENTS.md` / `GEMINI.md` / `.cursor/rules` / `.github/copilot-instructions.md`)
@@ -83,6 +82,8 @@ php artisan migrate --seed
 npm run build
 ```
 
+Use Node.js 22.23.4 or newer (`nvm use` selects the repository version).
+
 SQLite works by default. Configure another database in `.env` before migration when required.
 
 ## ⚡ Usage
@@ -119,7 +120,6 @@ php artisan scribe:generate
 
 - `knuckleswtf/scribe`: Generates API documentation from your code.
 - `santigarcor/laratrust`: Handles roles and permissions.
-- `spatie/laravel-data`: Powerful data transfer objects.
 
 ## 📄 License
 

@@ -82,7 +82,7 @@ php artisan migrate --seed
 npm run build
 ```
 
-Use Node.js 22.23.4 or newer (`nvm use` selects the repository version).
+Use Node.js 22.23.5 or newer (`nvm use` selects the repository version).
 
 SQLite works by default. Configure another database in `.env` before migration when required.
 

@@ -37,7 +37,7 @@ RUN npm run build
 # ------------------------------------------------------------------------------
 # Stage: base — PHP-FPM with extensions required by the application
 # ------------------------------------------------------------------------------
-FROM php:8.4-fpm-alpine AS base
+FROM php:8.4.28-fpm-alpine AS base
 
 ENV COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_NO_INTERACTION=1 \

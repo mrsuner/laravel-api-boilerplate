@@ -51,7 +51,7 @@ services:
       - app
 
   db:
-    image: postgres:17.10-alpine
+    image: postgres:17.12-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_DATABASE:-laravel}
@@ -70,7 +70,7 @@ services:
       - app
 
   redis:
-    image: redis:8.6-alpine
+    image: redis:8.6.8-alpine
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:

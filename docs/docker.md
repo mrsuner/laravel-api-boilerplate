@@ -25,8 +25,8 @@ flowchart LR
 | `app` | `${APP_IMAGE}:${APP_IMAGE_TAG}` | PHP-FPM listening on `:9000` |
 | `queue` | same | `php artisan queue:work` |
 | `scheduler` | same | `php artisan schedule:work` (replaces host cron) |
-| `db` | `postgres:17.10-alpine` | Primary datastore |
-| `redis` | `redis:8.6-alpine` | Cache, session, queue backend |
+| `db` | `postgres:17.12-alpine` | Primary datastore |
+| `redis` | `redis:8.6.8-alpine` | Cache, session, queue backend |
 
 ## Image Layout
 
@@ -209,11 +209,13 @@ Three env files cooperate, loaded in this order so later layers win:
 Both `docker/.env.docker` and `docker/.env.prod` are in `.gitignore`. Commit
 only the `*.example` siblings.
 
+Before updating an existing PostgreSQL 17 installation to 17.12, review the [17.11](https://www.postgresql.org/docs/release/17.11/) and [17.12](https://www.postgresql.org/docs/release/17.12/) upgrade notes. Existing installations may need configuration review, affected-index reindexing, or a new full backup when incremental backups are used. The image update does not perform these operations automatically.
+
 ## Customising
 
 | What | How |
 |---|---|
-| Bump PHP version | Change `FROM php:8.4-fpm-alpine` in `docker/Dockerfile`. |
+| Bump PHP version | Update the pinned `FROM php:8.4.28-fpm-alpine` in `docker/Dockerfile` to the reviewed patch release, then rebuild and verify the runtime. |
 | Add a PHP extension | Append to the `docker-php-ext-install` list in the `base` stage. |
 | Change PHP-FPM concurrency | Edit `docker/php/www.conf` (`pm.max_children`, etc.). |
 | Add a service (e.g. Meilisearch) | Add to `docker-compose.yml` and `docker/docker-compose.prod.yml`; share the `app` network. |
